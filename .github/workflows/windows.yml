@@ -1,0 +1,36 @@
+name: Build Windows installer
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-2022
+    steps:
+      - name: Check out build kit
+        uses: actions/checkout@v4
+
+      - name: Extract application source
+        shell: pwsh
+        run: Expand-Archive -LiteralPath .\keyboard-cat-desktop-custom-source.zip -DestinationPath .\source -Force
+
+      - name: Install NSIS 3
+        shell: pwsh
+        run: choco install nsis -y --no-progress
+
+      - name: Build application and installer
+        shell: pwsh
+        run: .\source\keyboard-cat-desktop-main\windows\build.ps1 -OutputDirectory .\artifacts
+
+      - name: Upload installer artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: keyboard-cat-windows-installer
+          path: artifacts/*.exe
+          if-no-files-found: error
+          retention-days: 14
